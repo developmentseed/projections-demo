@@ -2,7 +2,8 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import styled, { useTheme } from 'styled-components';
 import mapboxgl from '../../mb-gl/mapbox-gl';
 import '../../mb-gl/mapbox-gl.css';
-// import 'mapbox-gl/dist/mapbox-gl.css';
+import CompareMbGL from 'mapbox-gl-compare';
+import 'mapbox-gl-compare/dist/mapbox-gl-compare.css';
 
 import App from '../common/app';
 import { PageMainContent } from '../../styles/page';
@@ -23,9 +24,18 @@ const PageMain = styled(PageMainContent)`
   display: flex;
 `;
 
-const MapContainer = styled.div`
+const MapsContainer = styled.div`
   position: relative;
+  overflow: hidden;
   flex-grow: 1;
+`;
+
+const SingleMapContainer = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
 `;
 
 const OptForm = styled(Form)`
@@ -83,6 +93,12 @@ function Home() {
   const theme = useTheme();
   const mapContainer = useRef();
   const mapRef = useRef();
+
+  const mapCompareContainer = useRef();
+  const mapCompareRef = useRef();
+  const [comparing, setComparing] = useState();
+  const compareControl = useRef();
+
   const [projection, setProjection] = useState('mercator');
   const [layer, setLayer] = useState('co2');
   const [projectionSettings, setProjectionSettings] = useState({
@@ -171,11 +187,17 @@ function Home() {
   useEffect(() => {
     if (!mapRef.current) return;
 
-    mapRef.current.setProjection({
+    const pSettings = {
       name: projection,
       center: [projectionSettings.lng, projectionSettings.lat],
       parallels: [projectionSettings.sParLat, projectionSettings.nParLat]
-    });
+    };
+
+    mapRef.current.setProjection(pSettings);
+
+    if (mapCompareRef.current) {
+      mapCompareRef.current.setProjection(pSettings);
+    }
   }, [projectionSettings, projection]);
 
   useEffect(() => {
@@ -260,13 +282,48 @@ function Home() {
     [aoiState]
   );
 
+  useEffect(() => {
+    if (comparing) {
+      const mbCompareMap = new mapboxgl.Map({
+        container: mapCompareContainer.current,
+        style: 'mapbox://styles/covid-nasa/ckb01h6f10bn81iqg98ne0i2y',
+        logoPosition: 'bottom-left',
+        pitchWithRotate: false,
+        dragRotate: false,
+        center: mapRef.current.getCenter(),
+        zoom: mapRef.current.getZoom()
+      });
+
+      mapCompareRef.current = mbCompareMap;
+
+      // Add zoom controls.
+      mbCompareMap.addControl(new mapboxgl.NavigationControl(), 'top-left');
+      // Remove compass.
+      document.querySelector('.mapboxgl-ctrl .mapboxgl-ctrl-compass').remove();
+
+      compareControl.current = new CompareMbGL(
+        mbCompareMap,
+        mapRef.current,
+        '#container'
+      );
+    } else if (compareControl.current) {
+      compareControl.current.remove();
+      compareControl.current = null;
+      mapCompareRef.current.remove();
+      mapCompareRef.current = null;
+    }
+  }, [comparing]);
+
   return (
     <App pageTitle='Welcome'>
       <PageMain>
-        <MapContainer ref={mapContainer} />
+        <MapsContainer id='container'>
+          <SingleMapContainer ref={mapCompareContainer} />
+          <SingleMapContainer ref={mapContainer} />
+        </MapsContainer>
         <ProjectionList>
           <div>
-            <Heading size='small' as='p'>
+            <Heading size='xsmall' as='p'>
               AOI
             </Heading>
             <Button
@@ -285,6 +342,21 @@ function Home() {
             </Button>
           </div>
           <OptForm>
+            <Heading size='xsmall' as='p'>
+              Comparison
+            </Heading>
+
+            <FormCheckable
+              id='compare'
+              type='checkbox'
+              value='compare'
+              name='compare'
+              checked={comparing}
+              onChange={() => setComparing((v) => !v)}
+            >
+              Enable compare
+            </FormCheckable>
+
             <FormLabel>Layers</FormLabel>
             {layers.map((l) => (
               <FormCheckable
