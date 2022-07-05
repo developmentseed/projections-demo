@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import styled, { useTheme } from 'styled-components';
-import mapboxgl from '../../mb-gl/mapbox-gl';
-import '../../mb-gl/mapbox-gl.css';
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
 import CompareMbGL from 'mapbox-gl-compare';
 import 'mapbox-gl-compare/dist/mapbox-gl-compare.css';
 
@@ -17,7 +17,7 @@ import { CollecticonArea, CollecticonTrashBin } from '@devseed-ui/collecticons';
 import { useEffectPrevious } from '../../utils/use-effect-previous';
 
 mapboxgl.accessToken =
-  'pk.eyJ1IjoiY292aWQtbmFzYSIsImEiOiJja2F6eHBobTUwMzVzMzFueGJuczF6ZzdhIn0.8va1fkyaWgM57_gZ2rBMMg';
+  'pk.eyJ1IjoiZGV2c2VlZCIsImEiOiJnUi1mbkVvIn0.018aLhX0Mb0tdtaT2QNe2Q';
 
 const PageMain = styled(PageMainContent)`
   position: relative;
@@ -203,7 +203,7 @@ function Home() {
   useEffect(() => {
     const mbMap = new mapboxgl.Map({
       container: mapContainer.current,
-      style: 'mapbox://styles/covid-nasa/ckb01h6f10bn81iqg98ne0i2y',
+      style: 'mapbox://styles/mapbox/satellite-v9',
       logoPosition: 'bottom-left',
       pitchWithRotate: false,
       dragRotate: false,
@@ -261,8 +261,7 @@ function Home() {
             layout: {
               visibility: l.id === 'co2' ? 'visible' : 'none'
             }
-          },
-          'admin-0-boundary-bg'
+          }
         );
       });
     });
